@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r125/three.min.js" integrity="sha512-XI02ivhfmEfnk8CEEnJ92ZS6hOqWoWMKF6pxF/tC/DXBVxDXgs2Kmlc9CHA0Aw2dX03nrr8vF54Z6Mqlkuabkw==" crossorigin="anonymous"></script>
+<script src="https://s.cdpn.io/25480/OrbitControls.js"></script>
+
+<script type="x-shader/x-vertex" id="vertexshader">
+
+    attribute float scale;
+
+    void main() {
+
+        vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+
+        gl_PointSize = scale * ( 50.0 / - mvPosition.z );
+
+        gl_Position = projectionMatrix * mvPosition;
+
+    }
+
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentshader">
+
+    uniform vec3 color;
+
+    void main() {
+
+        if ( length( gl_PointCoord - vec2( 0.5, 0.5 ) ) > 0.475 ) discard;
+
+        gl_FragColor = vec4( color,0.0 );
+
+    }
+
+</script>
+<script>
+//     let width = window.innerWidth,
+//     height = window.innerHeight;
+
+// // Create a renderer and add it to the DOM.
+// let renderer = new THREE.WebGLRenderer();
+// renderer.setSize(width, height);
+// document.body.appendChild(renderer.domElement);
+// // Create the scene
+// let scene = new THREE.Scene();
+// // Create a camera
+// camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+// camera.position.z = 1000;
+// scene.add(camera);
+
+// // Create a light, set its position, and add it to the scene.
+// let light = new THREE.PointLight(0xffffff);
+// light.position.set(-100,200,100);
+// scene.add(light);
+
+// // Add OrbitControls so that we can pan around with the mouse.
+// let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+// const materials = [];
+
+// resize();
+// animate();
+// window.addEventListener('resize',resize);
+
+// function resize(){
+//   let w = window.innerWidth;
+//   let h = window.innerHeight;
+
+//   renderer.setSize(w,h);
+//   camera.aspect = w / h;
+//   camera.updateProjectionMatrix();
+// }
+// const particlesCount = 500000;
+
+// const arrayBuffer = new ArrayBuffer( particlesCount * 16 );
+// const interleavedUint8Buffer = new Uint8Array( arrayBuffer );
+
+// const geometry = new THREE.BufferGeometry();
+//     const vertices = [];
+
+//     const sprite = new THREE.TextureLoader().load( './disc.png' );
+
+//     const color = new THREE.Color();
+
+//     for ( let i = 0; i < particlesCount; i ++ ) {
+
+//         const x = 1000 * Math.random() - 1000;
+//         const y = 2000 * Math.random() - 1000;
+//         const z = 1000 * Math.random() - 1000;
+
+//         vertices.push( x, y, z );
+
+//         const vx = ( x / particlesCount ) + 0.5;
+//         const vy = ( y / particlesCount ) + 0.5;
+//         const vz = ( z / particlesCount ) + 0.5;
+
+//         color.setRGB( vx, vy, vz );
+
+//         const j = ( i + 3 ) * 4;
+
+//         interleavedUint8Buffer[ j + 0 ] = color.r * 255;
+//         interleavedUint8Buffer[ j + 1 ] = color.g * 255;
+//         interleavedUint8Buffer[ j + 2 ] = color.b * 255;
+//         interleavedUint8Buffer[ j + 3 ] = 0; // not needed
+
+//     }
+
+
+//     // the following typed arrays share the same buffer
+
+//     const interleavedBuffer8 = new THREE.InterleavedBuffer( interleavedUint8Buffer, 16 );
+
+//     const interleavedFloat32Buffer = new Float32Array( arrayBuffer );
+
+//     //
+
+//     geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+//     geometry.setAttribute( 'color', new THREE.InterleavedBufferAttribute( interleavedBuffer8, 3, 12, true ) );
+
+//     material = new THREE.PointsMaterial( { size:  25, sizeAttenuation: true, alphaTest: 0.5, transparent: true } );
+//     material.color.setHSL( 1.0, 1.0, 1.0 );
+
+
+//
+
+
+const SEPARATION = 100, AMOUNTX = 110, AMOUNTY = 110;
+
+			let container, stats;
+			let camera, scene, renderer;
+
+			let particles, count = 0;
+
+			let mouseX = 0, mouseY = 0;
+
+			let windowHalfX = window.innerWidth / 2;
+			let windowHalfY = window.innerHeight / 2;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.z = 1000;
+
+				scene = new THREE.Scene();
+
+				//
+
+				const numParticles = AMOUNTX * AMOUNTY;
+
+				const positions = new Float32Array( numParticles * 3 );
+				const scales = new Float32Array( numParticles );
+
+				let i = 0, j = 0;
+
+				for ( let ix = 0; ix < AMOUNTX; ix ++ ) {
+
+					for ( let iy = 0; iy < AMOUNTY; iy ++ ) {
+
+						positions[ i ] = ix * SEPARATION - ( ( AMOUNTX * SEPARATION ) / 2 ); // x
+						positions[ i + 1 ] = 0; // y
+						positions[ i + 2 ] = iy * SEPARATION - ( ( AMOUNTY * SEPARATION ) / 2 ); // z
+
+						scales[ j ] = 1;
+
+						i += 3;
+						j ++;
+
+					}
+
+				}
+
+				const geometry = new THREE.BufferGeometry();
+				geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+				geometry.setAttribute( 'scale', new THREE.BufferAttribute( scales, 1 ) );
+
+
+				const material = new THREE.ShaderMaterial( {
+
+					uniforms: {
+						color: { value: new THREE.Color( "rgb(0%, 00%, 0%)" ) },
+					},
+					vertexShader: document.getElementById( 'vertexshader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentshader' ).textContent
+
+				} );
+
+				//
+
+				particles = new THREE.Points( geometry, material );
+				scene.add( particles );
+
+				//
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+
+				container.style.touchAction = 'none';
+				container.addEventListener( 'pointermove', onPointerMove );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize );
+
+			}
+
+			function onWindowResize() {
+
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = window.innerHeight / 2;
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			function onPointerMove( event ) {
+
+				if ( event.isPrimary === false ) return;
+
+				mouseX = event.clientX - windowHalfX;
+				mouseY = event.clientY - windowHalfY;
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+
+			}
+			var delta = 0;
+			console.log(particles.material.uniforms.color);
+
+			function render() {
+
+
+				delta += Math.random()/10;
+
+				particles.material.uniforms.color.value.b=Math.sin(delta/12);
+				particles.material.uniforms.color.value.r=Math.sin(delta/14)<.1 ? 1.0 : Math.sin(delta/14);
+				particles.material.uniforms.color.value.g=Math.sin(delta/16);
+
+
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY - camera.position.y ) * .05;
+				camera.lookAt( scene.position );
+
+				const positions = particles.geometry.attributes.position.array;
+				const scales = particles.geometry.attributes.scale.array;
+
+				// particles.material.uniforms.color.value = 0.5 + Math.sin(delta) * 0.5;
+
+				let i = 0, j = 0;
+
+				for ( let ix = 0; ix < AMOUNTX; ix ++ ) {
+
+					for ( let iy = 0; iy < AMOUNTY; iy ++ ) {
+
+						positions[ i + 1 ] = ( Math.sin( ( ix + count ) * 0.3 ) * 50 ) +
+										( Math.sin( ( iy + count ) * 0.5 ) * 50 );
+
+						scales[ j ] = ( Math.sin( ( ix + count ) * 0.3 ) + 1 ) * 20 +
+										( Math.sin( ( iy + count ) * 0.5 ) + 1 ) * 20;
+
+						i += 3;
+						j ++;
+
+					}
+
+				}
+
+				particles.geometry.attributes.position.needsUpdate = true;
+				particles.geometry.attributes.scale.needsUpdate = true;
+
+				renderer.render( scene, camera );
+
+				count += 0.1;
+
+			}
+</script>
+</html>
